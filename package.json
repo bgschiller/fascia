@@ -1,0 +1,22 @@
+{
+  "name": "typing-express-middleware",
+  "version": "1.0.0",
+  "description": "A pattern I find really useful in web apps is to separate out authentication, authorization, and the action. In node/express, these end up as middlewares:",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@typed/compose": "^1.0.0",
+    "@types/passport": "^1.0.0",
+    "express": "^4.16.4",
+    "passport": "^0.4.0",
+    "type-fest": "^0.4.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.16.1",
+    "@types/node": "^11.13.7"
+  }
+}
