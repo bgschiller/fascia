@@ -1,4 +1,4 @@
-import { Resp } from "./definitions";
+import { Resp } from './definitions';
 
 export class ControllerError extends Error {
   status_code: number;
@@ -10,7 +10,7 @@ export class ControllerError extends Error {
     return {
       body: this.message,
       status_code: this.status_code,
-      headers: {}
+      headers: {},
     };
   }
 }
@@ -18,4 +18,18 @@ export class ClientError extends ControllerError {
   constructor(message: string, { status_code }: { status_code: number }) {
     super(message, { status_code: status_code || 400 });
   }
+}
+export class NotAuthorized extends ControllerError {
+  constructor(message: string) {
+    super(message, { status_code: 403 });
+  }
+}
+
+export function errorHandler(err: any): Resp {
+  if (err instanceof ControllerError) return err.toResponse();
+  return {
+    body: 'an error occurred',
+    status_code: 500,
+    headers: {},
+  };
 }

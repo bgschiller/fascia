@@ -1,8 +1,11 @@
 {
-    "compilerOptions": {
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "allowSyntheticDefaultImports": true,
-        "strict": true
-    }
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "target": "es2017"
+  },
+  "plugins": [{ "name": "typescript-tslint-plugin" }],
+  "types": ["jest"]
 }
