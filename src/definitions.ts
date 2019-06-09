@@ -1,9 +1,9 @@
 import express, { Request, Response } from 'express';
-import { JsonValue } from 'type-fest';
 
-type Dictionary<V> = { [k: string]: V };
+export type Dictionary<V> = { [k: string]: V };
 
 export interface Connection {
+  body: unknown;
   method: string;
   path: string;
   params: Dictionary<string>;
@@ -24,7 +24,7 @@ interface JsonOptions {
 }
 export function json(
   conn: Connection,
-  body: JsonValue,
+  body: any,
   opts: JsonOptions = {},
 ): Resp {
   const headers = opts.headers || {};

@@ -1,5 +1,4 @@
-import express, { Request } from 'express';
-import { compose } from '@typed/compose';
+import express from 'express';
 import { Connection, Resp, json } from './definitions';
 import {
   fakeResponse,
@@ -7,27 +6,36 @@ import {
   fireResponse,
   nextToPromise,
   withConnection,
+  decodeBody,
+  TypedBody,
+  readRes,
 } from './adapter';
 import {
-  ControllerError,
-  ClientError,
   errorHandler,
   NotAuthorized,
+  ControllerError,
+  EarlyResponse,
 } from './errors';
-import emptyPromise from 'empty-promise';
 import passport from 'passport';
+import pgResource from './pg-resource';
+import * as t from 'io-ts';
 
 const app = express();
 
 interface WithUser {
   user: any;
 }
-function requiresLogin(conn: Connection): Promise<Connection & WithUser> {
+async function requiresLogin(conn: Connection): Promise<Connection & WithUser> {
   const res = fakeResponse(conn._req);
   const { p, next } = nextToPromise();
   passport.authenticate('jwt')(conn._req, res, next);
-  // TODO what if passport responds with a redirect or something and never calls next?
-  return p.then(() => ({ ...conn, user: conn._req.user }));
+  // There is a possibility that passport responds with a redirect or something
+  // and never calls next? In this sitation, we listen for `res.ended`
+  const result = await Promise.race([p, res.ended.then(() => 'res ended')]);
+  if (result === 'res ended') {
+    throw EarlyResponse.fromResp(readRes(res));
+  }
+  return { ...conn, user: conn._req.user };
 }
 
 function deleteEverything(conn: Connection & WithUser): Promise<Resp> {
@@ -46,6 +54,15 @@ app.delete('/everything', async (req, res) => {
     .catch(errorHandler)
     .then(response => fireResponse(response, res));
 });
+
+app.delete(
+  '/everything',
+  withConnection(conn =>
+    Promise.resolve(conn)
+      .then(requiresLogin)
+      .then(deleteEverything),
+  ),
+);
 
 interface WithTicket {
   ticket: Ticket;
@@ -79,9 +96,91 @@ app.post('/:ticketId/remind', (req: express.Request, res: express.Response) => {
 app.post(
   '/:ticketId/remind',
   withConnection(conn =>
-    conn
+    Promise.resolve(conn)
       .then(requiresLogin)
       .then(mustOwnTicket)
       .then(sendReminder),
   ),
 );
+
+// What about CRUD?
+const TalkV = t.type({
+  id: t.number,
+  user_id: t.number,
+  title: t.string,
+  description: t.string,
+});
+type Talk = t.TypeOf<typeof TalkV>;
+
+const talkCrud = pgResource<Talk>({ tableName: 'talk' });
+
+function setUserId<T, C extends TypedBody<T> & WithUser>(conn: C) {
+  return {
+    ...conn,
+    body: {
+      ...conn.body,
+      user_id: conn.user.id,
+    },
+  };
+}
+
+const talkRouter = express.Router();
+
+async function mustOwnTalk<C extends Connection & WithUser>(
+  conn: C,
+): Promise<C> {
+  const { row } = await talkCrud.get(conn);
+  if (row.user_id !== conn.user.id) {
+    throw new NotAuthorized('You must own the talk to take this action');
+  }
+  return conn;
+}
+
+function jsonFrom<C extends Connection, K extends keyof C>(
+  k: K,
+): (conn: C) => Resp {
+  return conn => json(conn, conn[k]);
+}
+
+const CreateUpdateTalkV = t.type({
+  title: t.string,
+  description: t.string,
+});
+
+talkRouter.get(
+  '/',
+  withConnection(conn => talkCrud.find(conn).then(jsonFrom('rows'))),
+);
+talkRouter.post(
+  '/',
+  withConnection(conn =>
+    requiresLogin(conn)
+      .then(decodeBody(CreateUpdateTalkV))
+      .then(setUserId)
+      .then(talkCrud.create)
+      .then(jsonFrom('row')),
+  ),
+);
+app.patch(
+  // to update a talk, send a PATCH request
+  '/talks/:id', // to this endpoint
+  withConnection(
+    conn =>
+      requiresLogin(conn) // you must be logged in
+        .then(mustOwnTalk) // you must own the talk in question
+        .then(decodeBody(CreateUpdateTalkV)) // request body must match this interface
+        .then(talkCrud.update)
+        .then(jsonFrom('row')), // respond with json
+  ),
+);
+talkRouter.delete(
+  '/:id',
+  withConnection(conn =>
+    requiresLogin(conn)
+      .then(mustOwnTalk)
+      .then(talkCrud.destroy)
+      .then(conn => json(conn, { status: 'ok' })),
+  ),
+);
+
+app.use('/talks', talkRouter);

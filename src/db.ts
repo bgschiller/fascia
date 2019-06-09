@@ -1,6 +1,6 @@
-import * as knex from "knex";
+import * as knex from 'knex';
 
 export default knex({
-  client: "pg",
-  connection: process.env.DATABASE_URL
+  client: 'pg',
+  connection: process.env.DATABASE_URL,
 });

@@ -1,12 +1,14 @@
+# Fascia
+
 A pattern I find really useful in web apps is to separate out authentication, authorization, and the action. In node/express, these end up as middlewares:
 
 ```typescript
 app.post(
-  "tickets/:ticketId/remind",
-  passport.authenticate("jwt", { session: false }),
+  'tickets/:ticketId/remind',
+  passport.authenticate('jwt', { session: false }),
   mustOwnTicket,
   ticketMustBeUnclaimed,
-  remindUnclaimedTicket
+  remindUnclaimedTicket,
 );
 ```
 
@@ -21,7 +23,7 @@ async function mustOwnTicket(req, res, next) {
   const ticket = await getTicket(ticketId);
   const ownsTicket = ticket && ticket.purchaser_id === userId;
   if (!ownsTicket) {
-    return next(new ClientError("must own the ticket", { status_code: 401 }));
+    return next(new ClientError('must own the ticket', { status_code: 401 }));
   }
   req.ticket = ticket; // store ticket on request for next middleware
   // TS: "Property 'ticket' does not exist on type 'Request'"
@@ -33,21 +35,21 @@ However, this is difficult to do in a type-safe way. Each middleware function is
 
 ```typescript{6,7}
 app.post(
-  "tickets/:ticketId/remind",
-  passport.authenticate("jwt", { session: false }),
+  'tickets/:ticketId/remind',
+  passport.authenticate('jwt', { session: false }),
   mustOwnTicket,
   async (req: express.Request, res: express.Response) => {
     const ticket = req.ticket;
     // TS: "Property 'ticket' does not exist on type 'Request'"
     await sendEmailReminder(ticket);
-    res.json({ message: "success" });
-  }
+    res.json({ message: 'success' });
+  },
 );
 ```
 
 There are other annoyances about express' API, mostly around returning a response. It's not always clear when a function will return immediately, and when it is merely setting the stage. Compare `res.status(400).json(data)` and `res.json(data).status(400)`. One of those correctly sets the response code, and one doesn't.
 
-Also, can I continue to do work after calling `res.end()`?
+Also, can you continue to do work after calling `res.end()`? _Spoiler: you can_. And which response methods call `res.end()`?
 
 ```typescript{4,5}
 async function (req: express.Request, res: express.Response) {
@@ -63,10 +65,10 @@ async function (req: express.Request, res: express.Response) {
     const ticket = req.ticket;
     if (notAuthorized) {
         res.json({ message: "you need to log in!" });
-        return;
     }
     deleteTheTickets(ticket);
     // is this allowed? We've already returned...
+    res.json({ message: 'ok' });
 }
 ```
 
@@ -96,7 +98,7 @@ interface Response {
 
 async function mustOwnTicket<T extends Context & HasUser>(
   ctx: T,
-  next: (t: T & HasTicket) => Response
+  next: (t: T & HasTicket) => Response,
 ): Promise<Response> {
   // passport.authenticate() placed user in the context.
   const { request, user } = ctx;
@@ -113,31 +115,31 @@ async function mustOwnTicket<T extends Context & HasUser>(
 
 async function ticketMustBeUnclaimed<T extends Context & HasTicket>(
   ctx: T,
-  next: (t: T & HasUnclaimedTicket) => Response
+  next: (t: T & HasUnclaimedTicket) => Response,
 ): Promise<Response> {
   const ticketId = req.params.ticketId;
   const unclaimedTicket = await UnclaimedTicket.find(ticketId);
   if (!unclaimedTicket) {
     throw new ClientError(
-      "Ticket could not be found, or has already been claimed"
+      'Ticket could not be found, or has already been claimed',
     );
   }
   return next({ ...ctx, unclaimedTicket });
 }
 
 // this is not a good api...
-app.post("/:ticketId/revoke", ctx =>
+app.post('/:ticketId/revoke', ctx =>
   mustOwnTicket(ctx, ctx =>
-    ticketMustBeUnclaimed(ctx, (ctx, revokeUnclaimedTicket))
-  )
+    ticketMustBeUnclaimed(ctx, (ctx, revokeUnclaimedTicket)),
+  ),
 );
 
 // this is better. can we make it work?
 app.post(
-  "/:ticketId/revoke",
+  '/:ticketId/revoke',
   mustOwnTicket,
   ticketMustBeUnclaimed,
-  revokeUnclaimedTicket
+  revokeUnclaimedTicket,
 );
 
 const handlers = [mustOwnTicket, ticketMustBeUnclaimed, revokeUnclaimedTicket];
@@ -181,7 +183,7 @@ interface HasTicket {
 type Handler<T extends Context = Context> = (ctx: T) => Promise<Response>;
 
 function requiresLogin<T extends Context>(
-  next: Handler<T>
+  next: Handler<T>,
 ): Handler<T & HasUser> {
   return function decorated(ctx) {
     const user = verifyJWT(ctx.request);
@@ -190,16 +192,16 @@ function requiresLogin<T extends Context>(
 }
 
 function mustOwnTicket<T extends Context & HasUser>(
-  next: Handler<T>
+  next: Handler<T>,
 ): Handler<T & HasTicket> {
   return async function decorated(ctx: T) {
     const ticketId = ctx.request.params.ticketId;
     const ticket = await Ticket.query({
       id: ticketId,
-      owner: ctx.user
+      owner: ctx.user,
     });
     if (!ticket) {
-      throw new Error("you must own the ticket to take that action");
+      throw new Error('you must own the ticket to take that action');
     }
     return next({ ...ctx, ticket });
   };
@@ -208,7 +210,7 @@ function mustOwnTicket<T extends Context & HasUser>(
 async function sendReminder(ctx: Context & HasTicket): Promise<Response> {
   const { ticket } = ctx;
   await sendEmailReminder(ticket);
-  return json({ message: "sent" });
+  return json({ message: 'sent' });
 }
 
 const ctx = {} as Context;

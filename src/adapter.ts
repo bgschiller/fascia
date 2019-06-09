@@ -1,18 +1,16 @@
 import { Connection, Resp } from './definitions';
-import {
-  RequestHandler,
-  Request,
-  Response,
-  NextFunction,
-  ErrorRequestHandler,
-} from 'express';
+import { RequestHandler, Request, Response, NextFunction } from 'express';
 const httpMocks = require('node-mocks-http');
 const emptyPromise = require('empty-promise');
 import { MockResponse } from 'node-mocks-http';
 import { errorHandler } from './errors';
+import { EmptyPromise } from 'empty-promise';
+import * as t from 'io-ts';
+import * as tP from 'io-ts-promise';
 
 export function createConnection(req: Request): Connection {
   return {
+    body: req.body,
     method: req.method,
     params: req.params,
     path: req.path,
@@ -30,10 +28,10 @@ export function fireResponse(resp: Resp, res: Response): void {
 }
 
 export function withConnection(
-  handler: (conn: Promise<Connection>) => Promise<Resp>,
+  handler: (conn: Connection) => Promise<Resp>,
 ): RequestHandler {
   return function(req: Request, res: Response, next: NextFunction) {
-    handler(Promise.resolve(createConnection(req)))
+    handler(createConnection(req))
       .catch(errorHandler)
       .then(resp => fireResponse(resp, res))
       .catch(next);
@@ -52,20 +50,15 @@ export function fakeResponse(req: Request): FakeResponse {
   return res;
 }
 
-interface PossiblyCompleteResponse extends Resp {
-  complete: boolean;
-}
-
-export function readRes(res: FakeResponse): PossiblyCompleteResponse {
+export function readRes(res: FakeResponse): Resp {
   return {
-    complete: res._isEndCalled(),
     body: res._getData(),
     status_code: res._getStatusCode(),
     headers: res._getHeaders(),
   };
 }
 
-export function nextToPromise() {
+export function nextToPromise(): { next: NextFunction; p: EmptyPromise } {
   const p = emptyPromise();
   function next(err?: any) {
     if (err) p.reject(err);
@@ -74,23 +67,38 @@ export function nextToPromise() {
   return { next, p };
 }
 
-function isErrorRequestHandler(
-  h: RequestHandler | ErrorRequestHandler,
-): h is ErrorRequestHandler {
-  return h.length === 4;
+export interface TypedBody<T> extends Connection {
+  body: T;
 }
-
-function mergeResponses(r1: Resp | undefined, r2: Resp): Resp {
-  if (!r1) return r2;
-  return {
-    body: r1.body || r2.body,
-    status_code: r1.status_code || r2.status_code,
-    headers: {
-      ...r1.headers,
-      ...r2.headers,
-    },
+export function decodeBody<T, C extends Connection>(
+  validator: t.Decoder<unknown, T>,
+): (conn: C) => Promise<C & TypedBody<T>> {
+  return async function(conn) {
+    const body = await tP.decode(validator, conn.body);
+    return {
+      ...conn,
+      body,
+    };
   };
 }
+
+// function isErrorRequestHandler(
+//   h: RequestHandler | ErrorRequestHandler,
+// ): h is ErrorRequestHandler {
+//   return h.length === 4;
+// }
+
+// function mergeResponses(r1: Resp | undefined, r2: Resp): Resp {
+//   if (!r1) return r2;
+//   return {
+//     body: r1.body || r2.body,
+//     status_code: r1.status_code || r2.status_code,
+//     headers: {
+//       ...r1.headers,
+//       ...r2.headers,
+//     },
+//   };
+// }
 
 // const REQUEST_ENDED = Symbol();
 // export function fromExpressMiddleware(

@@ -1,5 +1,5 @@
 const httpMocks = require('node-mocks-http');
-import { fakeResponse, readRes, fireResponse } from './adapter';
+import { fakeResponse, readRes, fireResponse, nextToPromise } from './adapter';
 import { Connection, Resp } from './definitions';
 import { sleep } from './util';
 const emptyPromise = require('empty-promise');
@@ -75,5 +75,19 @@ describe('fireResponse', () => {
 
   it('sets headers correctly', () => {
     expect(res._getHeaders()).toEqual(resp.headers);
+  });
+});
+
+describe('nextToPromise', () => {
+  it('resolves on call', () => {
+    const { next, p } = nextToPromise();
+    next();
+    expect(p).resolves.toBeFalsy();
+  });
+
+  it('rejects on call with argument', () => {
+    const { next, p } = nextToPromise();
+    next('error');
+    expect(p).rejects.toBe('error');
   });
 });
