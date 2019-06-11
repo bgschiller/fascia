@@ -1,8 +1,6 @@
-import db from './db';
-import { QueryCallback } from 'knex';
+import knex, { QueryCallback } from 'knex';
 import { Omit } from 'type-fest';
-import { Connection } from './definitions';
-import { TypedBody } from './adapter';
+import { Connection, TypedBody } from './adapter';
 
 export class ResourceError<C> extends Error {
   conn: C;
@@ -27,6 +25,7 @@ export class DisallowedKeyError<C> extends ResourceError<C> {
 }
 
 export interface ResourceOptions {
+  db: knex;
   tableName: string;
 }
 interface ModelBase {
@@ -39,7 +38,10 @@ export interface WithWhere<T> {
 export interface WithRows<T> {
   rows: T[];
 }
-export function mkFind<T extends ModelBase>({ tableName }: ResourceOptions) {
+export function mkFind<T extends ModelBase>({
+  db,
+  tableName,
+}: ResourceOptions) {
   return async function find<C extends Connection & WithWhere<T>>(
     conn: C,
   ): Promise<C & WithRows<T>> {
@@ -57,7 +59,7 @@ export function mkFind<T extends ModelBase>({ tableName }: ResourceOptions) {
 export interface WithRow<T> {
   row: T;
 }
-export function mkGet<T>({ tableName }: ResourceOptions) {
+export function mkGet<T>({ db, tableName }: ResourceOptions) {
   return async function get<C extends Connection>(
     conn: C,
   ): Promise<C & WithRow<T>> {
@@ -73,7 +75,10 @@ export function mkGet<T>({ tableName }: ResourceOptions) {
   };
 }
 
-export function mkCreate<T extends ModelBase>({ tableName }: ResourceOptions) {
+export function mkCreate<T extends ModelBase>({
+  db,
+  tableName,
+}: ResourceOptions) {
   return async function create<C extends TypedBody<Omit<T, 'id'>>>(
     conn: C,
   ): Promise<C & WithRow<T>> {
@@ -85,7 +90,10 @@ export function mkCreate<T extends ModelBase>({ tableName }: ResourceOptions) {
   };
 }
 
-export function mkUpdate<T extends ModelBase>({ tableName }: ResourceOptions) {
+export function mkUpdate<T extends ModelBase>({
+  db,
+  tableName,
+}: ResourceOptions) {
   return async function update<C extends TypedBody<Partial<Omit<T, 'id'>>>>(
     conn: C,
   ): Promise<C & WithRow<T>> {
@@ -98,7 +106,7 @@ export function mkUpdate<T extends ModelBase>({ tableName }: ResourceOptions) {
   };
 }
 
-export function mkDestroy({ tableName }: ResourceOptions) {
+export function mkDestroy({ db, tableName }: ResourceOptions) {
   return async function destroy<C extends Connection>(conn: C): Promise<C> {
     const numRemoved = await db(tableName)
       .where('id', conn.params.id)

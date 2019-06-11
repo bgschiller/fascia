@@ -1,4 +1,4 @@
-import * as knex from 'knex';
+import knex from 'knex';
 
 export default knex({
   client: 'pg',

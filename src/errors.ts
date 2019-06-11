@@ -1,4 +1,4 @@
-import { Resp, Dictionary } from './definitions';
+import { Resp, Dictionary } from './adapter';
 import { DecodeError, isDecodeError } from 'io-ts-promise';
 import { failure as ioTsFailure } from 'io-ts/lib/PathReporter';
 

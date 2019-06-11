@@ -1,6 +1,11 @@
 const httpMocks = require('node-mocks-http');
-import { fakeResponse, readRes, fireResponse, nextToPromise } from './adapter';
-import { Connection, Resp } from './definitions';
+import {
+  fakeResponse,
+  readRes,
+  fireResponse,
+  nextToPromise,
+  Resp,
+} from './adapter';
 import { sleep } from './util';
 const emptyPromise = require('empty-promise');
 
@@ -47,7 +52,6 @@ describe('fakeResponse', () => {
     await sleep(0);
     expect(ended.done()).toBe(false);
     const resp = readRes(res);
-    expect(resp.complete).toBe(false);
     expect(resp.headers['middleware-was-here']).toBe('but-didnt-end-the-res');
   });
 });

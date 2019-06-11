@@ -1,4 +1,3 @@
-import { Connection, Resp } from './definitions';
 import { RequestHandler, Request, Response, NextFunction } from 'express';
 const httpMocks = require('node-mocks-http');
 const emptyPromise = require('empty-promise');
@@ -7,6 +6,42 @@ import { errorHandler } from './errors';
 import { EmptyPromise } from 'empty-promise';
 import * as t from 'io-ts';
 import * as tP from 'io-ts-promise';
+
+export type Dictionary<V> = { [k: string]: V };
+
+export interface Connection {
+  body: unknown;
+  method: string;
+  path: string;
+  params: Dictionary<string>;
+  query: Dictionary<string>;
+  _req: Request;
+}
+
+export interface Resp {
+  body: string;
+  status_code: number;
+  headers: { [h: string]: string };
+  conn?: Connection;
+}
+
+interface JsonOptions {
+  status_code?: number;
+  headers?: Dictionary<string>;
+}
+export function json(
+  conn: Connection,
+  body: any,
+  opts: JsonOptions = {},
+): Resp {
+  const headers = opts.headers || {};
+  return {
+    body: JSON.stringify(body),
+    status_code: opts.status_code || 200,
+    headers: { ...headers, 'content-type': 'application/json' },
+    conn,
+  };
+}
 
 export function createConnection(req: Request): Connection {
   return {

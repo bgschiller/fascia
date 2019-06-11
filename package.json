@@ -1,27 +1,27 @@
 {
-  "name": "typing-express-middleware",
-  "version": "1.0.0",
+  "name": "fascia",
+  "version": "0.0.1-alpha",
   "description": "A pattern I find really useful in web apps is to separate out authentication, authorization, and the action. In node/express, these end up as middlewares:",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "umd:main": "dist/fascia.umd.production.js",
+  "module": "dist/fascia.es.production.js",
+  "typings": "dist/index.d.ts",
   "scripts": {
+    "build": "rollup -c rollup.config.ts",
     "test": "jest",
     "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand"
   },
   "author": "",
   "license": "MIT",
+  "peerDependencies": {
+    "express": "*",
+    "knex": "*"
+  },
   "dependencies": {
-    "@typed/compose": "^1.0.0",
     "empty-promise": "^1.2.0",
-    "express": "^4.16.4",
-    "io-ts": "^1.8.6",
-    "io-ts-promise": "^1.1.1",
-    "jest": "^24.8.0",
-    "knex": "^0.16.7",
-    "node-mocks-http": "^1.7.5",
-    "passport": "^0.4.0",
-    "pg": "^7.11.0",
-    "slonik": "^16.19.5",
-    "ts-jest": "^24.0.2"
+    "io-ts": "^1.0.0",
+    "io-ts-promise": "^1.0.0",
+    "node-mocks-http": "^1.7.5"
   },
   "devDependencies": {
     "@types/express": "^4.16.1",
@@ -29,6 +29,14 @@
     "@types/node": "^11.13.7",
     "@types/passport": "^1.0.0",
     "@types/slonik": "^16.16.2",
+    "jest": "^24.8.0",
+    "prettier": "^1.18.2",
+    "rollup": "^1.15.0",
+    "rollup-plugin-commonjs": "^10.0.0",
+    "rollup-plugin-node-resolve": "^5.0.1",
+    "rollup-plugin-sourcemaps": "^0.4.2",
+    "rollup-plugin-typescript2": "^0.21.1",
+    "ts-jest": "^24.0.2",
     "type-fest": "^0.4.1",
     "typescript": "^3.4.5"
   }

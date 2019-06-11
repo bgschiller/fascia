@@ -33,7 +33,7 @@ async function mustOwnTicket(
 
 app.post(
   'tickets/:ticketId/remind',
-  // passport.authenticate("jwt", { session: false }),
+  passport.authenticate('jwt', { session: false }),
   mustOwnTicket,
   async (req: express.Request, res: express.Response) => {
     const ticket = req.ticket;
