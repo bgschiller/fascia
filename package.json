@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "umd:main": "dist/fascia.umd.production.js",
   "module": "dist/fascia.es.production.js",
-  "typings": "dist/index.d.ts",
+  "types": "dist/src/index.d.ts",
   "scripts": {
     "build": "rollup -c rollup.config.ts",
     "test": "jest",

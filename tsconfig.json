@@ -5,7 +5,8 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "strict": true,
-    "target": "es2017"
+    "target": "es2017",
+    "declaration": true
   },
   "plugins": [{ "name": "typescript-tslint-plugin" }],
   "types": ["jest"]
