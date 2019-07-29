@@ -19,7 +19,7 @@ import {
   EarlyResponse,
 } from '../src/errors';
 import passport from 'passport';
-import pgResource from '../src/pg-resource';
+import { pgResource, WithItemId, itemIdFromUrl } from '../src/pg-resource';
 import db from './db';
 import * as t from 'io-ts';
 
@@ -129,7 +129,7 @@ function setUserId<T, C extends TypedBody<T> & WithUser>(conn: C) {
 
 const talkRouter = express.Router();
 
-async function mustOwnTalk<C extends Connection & WithUser>(
+async function mustOwnTalk<C extends Connection & WithUser & WithItemId>(
   conn: C,
 ): Promise<C> {
   const { row } = await talkCrud.get(conn);
@@ -170,6 +170,7 @@ app.patch(
   withConnection(
     conn =>
       requiresLogin(conn) // you must be logged in
+        .then(itemIdFromUrl('id')) // Look to the :id in the url params for which talk
         .then(mustOwnTalk) // you must own the talk in question
         .then(decodeBody(CreateUpdateTalkV)) // request body must match this interface
         .then(talkCrud.update)
@@ -180,6 +181,7 @@ talkRouter.delete(
   '/:id',
   withConnection(conn =>
     requiresLogin(conn)
+      .then(itemIdFromUrl('id'))
       .then(mustOwnTalk)
       .then(talkCrud.destroy)
       .then(conn => json(conn, { status: 'ok' })),

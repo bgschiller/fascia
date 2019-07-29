@@ -57,7 +57,7 @@ export class ClientError extends ControllerError {
 }
 export class NotAuthorized extends ControllerError {
   constructor(message: string) {
-    super(message, { status_code: 403 });
+    super(message, { status_code: 401 });
   }
 }
 

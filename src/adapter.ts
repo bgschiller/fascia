@@ -6,6 +6,7 @@ import { errorHandler } from './errors';
 import { EmptyPromise } from 'empty-promise';
 import * as t from 'io-ts';
 import * as tP from 'io-ts-promise';
+import { IncomingHttpHeaders } from 'http';
 
 export type Dictionary<V> = { [k: string]: V };
 
@@ -13,6 +14,7 @@ export interface Connection {
   body: unknown;
   method: string;
   path: string;
+  headers: IncomingHttpHeaders;
   params: Dictionary<string>;
   query: Dictionary<string>;
   _req: Request;
@@ -46,6 +48,7 @@ export function json(
 export function createConnection(req: Request): Connection {
   return {
     body: req.body,
+    headers: req.headers,
     method: req.method,
     params: req.params,
     path: req.path,
@@ -62,11 +65,16 @@ export function fireResponse(resp: Resp, res: Response): void {
   res.send(resp.body);
 }
 
+function asPromise<T>(valueOrP: T | Promise<T>): Promise<T> {
+  // "upcast" a regular value into a promise.
+  return Promise.resolve(valueOrP);
+}
+
 export function withConnection(
-  handler: (conn: Connection) => Promise<Resp>,
+  handler: (conn: Connection) => Resp | Promise<Resp>,
 ): RequestHandler {
   return function(req: Request, res: Response, next: NextFunction) {
-    handler(createConnection(req))
+    asPromise(handler(createConnection(req)))
       .catch(errorHandler)
       .then(resp => fireResponse(resp, res))
       .catch(next);

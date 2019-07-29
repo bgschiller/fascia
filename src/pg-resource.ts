@@ -1,6 +1,7 @@
 import knex, { QueryCallback } from 'knex';
 import { Omit } from 'type-fest';
-import { Connection, TypedBody } from './adapter';
+import { TypedBody, Connection } from './adapter';
+import { ControllerError } from './errors';
 
 export class ResourceError<C> extends Error {
   conn: C;
@@ -42,7 +43,7 @@ export function mkFind<T extends ModelBase>({
   db,
   tableName,
 }: ResourceOptions) {
-  return async function find<C extends Connection & WithWhere<T>>(
+  return async function find<C extends WithWhere<T>>(
     conn: C,
   ): Promise<C & WithRows<T>> {
     let p = db(tableName).select('*');
@@ -59,13 +60,16 @@ export function mkFind<T extends ModelBase>({
 export interface WithRow<T> {
   row: T;
 }
+export interface WithItemId {
+  item_id: number | string;
+}
 export function mkGet<T>({ db, tableName }: ResourceOptions) {
-  return async function get<C extends Connection>(
+  return async function get<C extends WithItemId>(
     conn: C,
   ): Promise<C & WithRow<T>> {
     const records = await db(tableName)
       .select('*')
-      .where('id', conn.params.id)
+      .where('id', conn.item_id)
       .limit(1);
     if (records.length === 0) throw new RecordNotFound(conn);
     return {
@@ -94,11 +98,11 @@ export function mkUpdate<T extends ModelBase>({
   db,
   tableName,
 }: ResourceOptions) {
-  return async function update<C extends TypedBody<Partial<Omit<T, 'id'>>>>(
-    conn: C,
-  ): Promise<C & WithRow<T>> {
+  return async function update<
+    C extends WithItemId & TypedBody<Partial<Omit<T, 'id'>>>
+  >(conn: C): Promise<C & WithRow<T>> {
     const updated = (await db(tableName)
-      .where('id', conn.params.id)
+      .where('id', conn.item_id)
       .returning('*')
       .update(conn.body, '*')) as T[];
     if (updated.length === 0) throw new RecordNotFound(conn);
@@ -107,23 +111,36 @@ export function mkUpdate<T extends ModelBase>({
 }
 
 export function mkDestroy({ db, tableName }: ResourceOptions) {
-  return async function destroy<C extends Connection>(conn: C): Promise<C> {
+  return async function destroy<C extends WithItemId>(conn: C): Promise<C> {
     const numRemoved = await db(tableName)
-      .where('id', conn.params.id)
+      .where('id', conn.item_id)
       .delete();
     if (numRemoved === 0) throw new RecordNotFound(conn);
     return conn;
   };
 }
 
-export default function pgResource<T extends ModelBase>(
-  options: ResourceOptions,
-) {
+export function pgResource<T extends ModelBase>(options: ResourceOptions) {
   return {
     get: mkGet<T>(options),
     find: mkFind<T>(options),
     create: mkCreate<T>(options),
     update: mkUpdate<T>(options),
     destroy: mkDestroy(options),
+  };
+}
+
+export function itemIdFromUrl(paramName: string) {
+  return function readItemId<C extends Connection>(conn: C): C & WithItemId {
+    const itemId = conn.params[paramName];
+    if (!itemId)
+      throw new ControllerError(
+        `Parameter '${paramName}' was empty (Expected it to contain item_id)`,
+        { status_code: 500 },
+      );
+    return {
+      ...conn,
+      item_id: itemId,
+    };
   };
 }
