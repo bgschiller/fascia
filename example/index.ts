@@ -84,7 +84,7 @@ async function mustOwnTicket(
 async function sendReminder(conn: Connection & WithTicket): Promise<Resp> {
   const { ticket } = conn;
   await sendEmailReminder(ticket);
-  return json(conn, { message: 'sent' });
+  return json({ message: 'sent' });
 }
 
 app.post('/:ticketId/remind', (req: express.Request, res: express.Response) => {
@@ -184,7 +184,7 @@ talkRouter.delete(
       .then(itemIdFromUrl('id'))
       .then(mustOwnTalk)
       .then(talkCrud.destroy)
-      .then(conn => json(conn, { status: 'ok' })),
+      .then(conn => json({ status: 'ok' })),
   ),
 );
 

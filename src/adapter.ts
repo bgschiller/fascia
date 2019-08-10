@@ -14,6 +14,8 @@ export interface Connection {
   body: unknown;
   method: string;
   path: string;
+  cookies: Dictionary<string>;
+  signedCookies: Dictionary<string>;
   headers: IncomingHttpHeaders;
   params: Dictionary<string>;
   query: Dictionary<string>;
@@ -24,24 +26,18 @@ export interface Resp {
   body: string;
   status_code: number;
   headers: { [h: string]: string };
-  conn?: Connection;
 }
 
 interface JsonOptions {
   status_code?: number;
   headers?: Dictionary<string>;
 }
-export function json(
-  conn: Connection,
-  body: any,
-  opts: JsonOptions = {},
-): Resp {
+export function json(body: any, opts: JsonOptions = {}): Resp {
   const headers = opts.headers || {};
   return {
     body: JSON.stringify(body),
     status_code: opts.status_code || 200,
     headers: { ...headers, 'content-type': 'application/json' },
-    conn,
   };
 }
 
@@ -51,6 +47,8 @@ export function createConnection(req: Request): Connection {
     headers: req.headers,
     method: req.method,
     params: req.params,
+    cookies: req.cookies,
+    signedCookies: req.signedCookies,
     path: req.path,
     query: req.query,
     _req: req,
