@@ -1,6 +1,6 @@
 {
   "name": "fascia",
-  "version": "0.0.1-alpha-5",
+  "version": "0.0.1-alpha-6",
   "description": "A pattern I find really useful in web apps is to separate out authentication, authorization, and the action. In node/express, these end up as middlewares:",
   "main": "dist/index.js",
   "umd:main": "dist/fascia.umd.production.js",
