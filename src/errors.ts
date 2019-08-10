@@ -60,6 +60,11 @@ export class NotAuthorized extends ControllerError {
     super(message, { status_code: 401 });
   }
 }
+export class Forbidden extends ControllerError {
+  constructor(message: string) {
+    super(message, { status_code: 403 });
+  }
+}
 
 function decodeErrorResponse(err: DecodeError): Resp {
   return {
