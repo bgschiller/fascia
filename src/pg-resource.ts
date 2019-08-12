@@ -144,3 +144,13 @@ export function itemIdFromUrl(paramName: string) {
     };
   };
 }
+
+export function whereFromQueryString<C extends Connection, T>(
+  conn: C,
+): C & WithWhere<T> {
+  return {
+    // 😬 is this really the best way to do this?
+    criterion: (conn.query as unknown) as Partial<T>,
+    ...conn,
+  };
+}

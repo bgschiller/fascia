@@ -19,7 +19,12 @@ import {
   EarlyResponse,
 } from '../src/errors';
 import passport from 'passport';
-import { pgResource, WithItemId, itemIdFromUrl } from '../src/pg-resource';
+import {
+  pgResource,
+  WithItemId,
+  itemIdFromUrl,
+  whereFromQueryString,
+} from '../src/pg-resource';
 import db from './db';
 import * as t from 'io-ts';
 
@@ -152,7 +157,12 @@ const CreateUpdateTalkV = t.type({
 
 talkRouter.get(
   '/',
-  withConnection(conn => talkCrud.find(conn).then(jsonFrom('rows'))),
+  withConnection(conn =>
+    Promise.resolve(conn)
+      .then(whereFromQueryString)
+      .then(talkCrud.find)
+      .then(jsonFrom('rows')),
+  ),
 );
 talkRouter.post(
   '/',
