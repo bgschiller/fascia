@@ -20,7 +20,7 @@
     "empty-promise": "^1.2.0",
     "io-ts": "^1.0.0",
     "io-ts-promise": "^1.0.0",
-    "knex": "*",
+    "knex": "^0.20.8",
     "node-mocks-http": "^1.7.5"
   },
   "devDependencies": {
