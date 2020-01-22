@@ -18,8 +18,9 @@
   },
   "dependencies": {
     "empty-promise": "^1.2.0",
-    "io-ts": "^1.0.0",
-    "io-ts-promise": "^1.0.0",
+    "fp-ts": "^2.4.1",
+    "io-ts": "^2.0.5",
+    "io-ts-promise": "^2.0.2",
     "knex": "^0.20.8",
     "node-mocks-http": "^1.7.5"
   },
