@@ -1,7 +1,7 @@
 import { RequestHandler, Request, Response, NextFunction } from 'express';
 const httpMocks = require('node-mocks-http');
 const emptyPromise = require('empty-promise');
-import { MockResponse } from 'node-mocks-http';
+import { MockResponse, Headers } from 'node-mocks-http';
 import { errorHandler } from './errors';
 import { EmptyPromise } from 'empty-promise';
 import * as t from 'io-ts';
@@ -25,7 +25,7 @@ export interface Connection {
 export interface Resp {
   body: string;
   status_code: number;
-  headers: { [h: string]: string };
+  headers: Headers;
 }
 
 interface JsonOptions {
@@ -58,7 +58,7 @@ export function createConnection(req: Request): Connection {
 export function fireResponse(resp: Resp, res: Response): void {
   res.status(resp.status_code);
   for (const [k, v] of Object.entries(resp.headers)) {
-    res.setHeader(k, v);
+    res.setHeader(k, v as string | number | string[]);
   }
   res.send(resp.body);
 }
