@@ -1,5 +1,4 @@
 import knex, { QueryCallback } from 'knex';
-import { Except } from 'type-fest';
 import { TypedBody, Connection } from './adapter';
 import { ControllerError } from './errors';
 
@@ -83,7 +82,7 @@ export function mkCreate<T extends ModelBase>({
   db,
   tableName,
 }: ResourceOptions) {
-  return async function create<C extends TypedBody<Except<T, 'id'>>>(
+  return async function create<C extends TypedBody<Omit<T, 'id'>>>(
     conn: C,
   ): Promise<C & WithRow<T>> {
     const created = await db(tableName).insert(conn.body, '*');
@@ -99,7 +98,7 @@ export function mkUpdate<T extends ModelBase>({
   tableName,
 }: ResourceOptions) {
   return async function update<
-    C extends WithItemId & TypedBody<Partial<Except<T, 'id'>>>
+    C extends WithItemId & TypedBody<Partial<Omit<T, 'id'>>>
   >(conn: C): Promise<C & WithRow<T>> {
     const updated = (await db(tableName)
       .where('id', conn.item_id)
