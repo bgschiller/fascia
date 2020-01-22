@@ -1,5 +1,4 @@
 import knex, { QueryCallback } from 'knex';
-import { Omit } from 'type-fest';
 import { TypedBody, Connection } from './adapter';
 import { ControllerError } from './errors';
 

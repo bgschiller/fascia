@@ -21,5 +21,5 @@ export default {
   watch: {
     include: 'src/**',
   },
-  plugins: [typescript(), commonjs(), sourceMaps()],
+  plugins: [typescript({ clean: true }), commonjs(), sourceMaps()],
 };

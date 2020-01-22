@@ -1,6 +1,7 @@
 import { Resp, Dictionary } from './adapter';
 import { DecodeError, isDecodeError } from 'io-ts-promise';
 import { failure as ioTsFailure } from 'io-ts/lib/PathReporter';
+import { Headers } from 'node-mocks-http'
 
 export class ControllerError extends Error {
   status_code: number;
@@ -19,10 +20,10 @@ export class ControllerError extends Error {
 
 interface EarlyResponseOptions {
   status_code: number;
-  headers: Dictionary<string>;
+  headers: Headers;
 }
 export class EarlyResponse extends ControllerError {
-  headers: Dictionary<string>;
+  headers: Headers;
   constructor(body: string, { status_code, headers }: EarlyResponseOptions) {
     super(body, { status_code });
     this.headers = headers;
